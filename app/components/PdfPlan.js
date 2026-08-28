@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import styles from './PdfPlan.module.css';
 
 export default function PdfPlan({ url, zoom = 1, onAspect }) {
   const canvasRef = useRef(null);
@@ -29,8 +30,7 @@ export default function PdfPlan({ url, zoom = 1, onAspect }) {
         if (cancelled) return;
 
         const baseViewport = page.getViewport({ scale: 1 });
-        const aspect = baseViewport.width / baseViewport.height;
-        onAspect?.(aspect);
+        onAspect?.(baseViewport.width / baseViewport.height);
 
         const render = async () => {
           if (cancelled || !hostRef.current || !canvasRef.current) return;
@@ -38,8 +38,7 @@ export default function PdfPlan({ url, zoom = 1, onAspect }) {
           const cssHeight = Math.max(1, hostRef.current.clientHeight);
           const fitScale = Math.min(cssWidth / baseViewport.width, cssHeight / baseViewport.height);
           const dpr = Math.min(window.devicePixelRatio || 1, 2);
-          const qualityScale = Math.max(1, zoom) * dpr;
-          const viewport = page.getViewport({ scale: fitScale * qualityScale });
+          const viewport = page.getViewport({ scale: fitScale * Math.max(1, zoom) * dpr });
 
           const canvas = canvasRef.current;
           canvas.width = Math.max(1, Math.floor(viewport.width));
@@ -76,9 +75,9 @@ export default function PdfPlan({ url, zoom = 1, onAspect }) {
   }, [url, zoom, onAspect]);
 
   return (
-    <div className="pdf-plan-host" ref={hostRef}>
-      <canvas ref={canvasRef} className="pdf-plan-canvas" />
-      {error && <div className="pdf-plan-error">{error}</div>}
+    <div className={styles.host} ref={hostRef}>
+      <canvas ref={canvasRef} className={styles.canvas} />
+      {error && <div className={styles.error}>{error}</div>}
     </div>
   );
 }
