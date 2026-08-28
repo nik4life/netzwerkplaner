@@ -1,4 +1,5 @@
 import './globals.css';
+import ExportButtons from './components/ExportButtons';
 
 export const metadata = {
   title: 'Netzwerkplaner',
@@ -8,7 +9,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="de">
-      <body>{children}</body>
+      <body>
+        <ExportButtons />
+        {children}
+      </body>
     </html>
   );
 }
