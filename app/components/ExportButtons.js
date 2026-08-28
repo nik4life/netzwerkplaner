@@ -43,28 +43,19 @@ export default function ExportButtons() {
     try {
       setStatus('');
       const data = projectState();
-      const rows = [[
-        'Etage', 'Portpunkt', 'Montageart', 'Ports', 'Brüstungskanal', 'Position X (%)', 'Position Y (%)', 'Notiz',
-      ]];
-
+      const rows = [['Etage', 'Portpunkt', 'Montageart', 'Ports', 'Brüstungskanal', 'Position X (%)', 'Position Y (%)', 'Notiz']];
       for (const floor of data.floors || []) {
         (floor.markers || []).forEach((marker, index) => {
           rows.push([
-            floor.name || '',
-            index + 1,
-            TYPES[marker.type] || marker.type || '',
-            Number(marker.ports || 0),
-            marker.channelId ? 'Ja' : 'Nein',
-            Number(marker.x || 0).toFixed(2).replace('.', ','),
-            Number(marker.y || 0).toFixed(2).replace('.', ','),
-            marker.note || '',
+            floor.name || '', index + 1, TYPES[marker.type] || marker.type || '', Number(marker.ports || 0), marker.channelId ? 'Ja' : 'Nein',
+            Number(marker.x || 0).toFixed(2).replace('.', ','), Number(marker.y || 0).toFixed(2).replace('.', ','), marker.note || '',
           ]);
         });
       }
-
       const csv = '\ufeff' + rows.map((row) => row.map(csvCell).join(';')).join('\r\n');
       downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `${safeFilename(data.projectName)}_Portliste.csv`);
       setStatus('Tabelle exportiert');
+      window.setTimeout(() => setStatus(''), 2500);
     } catch (error) {
       setStatus(error?.message || 'CSV-Export fehlgeschlagen');
     }
@@ -77,11 +68,8 @@ export default function ExportButtons() {
       const data = projectState();
       const floor = (data.floors || []).find((item) => item.id === data.activeFloorId) || data.floors?.[0];
       if (!floor?.plan) throw new Error('Auf der aktiven Etage ist kein Plan hinterlegt.');
-
       const response = await fetch('/api/export/pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectName: data.projectName, floor }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ projectName: data.projectName, floor }),
       });
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
@@ -101,10 +89,10 @@ export default function ExportButtons() {
   }
 
   return (
-    <div className="export-dock" aria-label="Export">
-      <button className="button export-button" onClick={exportCsv}>Tabelle CSV</button>
-      <button className="button export-button" onClick={exportPdf} disabled={busy === 'pdf'}>{busy === 'pdf' ? 'PDF …' : 'Plan-PDF'}</button>
-      {status && <span className="export-status">{status}</span>}
+    <div aria-label="Export" style={{ position: 'fixed', top: 18, right: 270, zIndex: 50, display: 'flex', gap: 8, alignItems: 'center' }}>
+      <button className="button ghost" onClick={exportCsv}>Tabelle CSV</button>
+      <button className="button ghost" onClick={exportPdf} disabled={busy === 'pdf'}>{busy === 'pdf' ? 'PDF …' : 'Plan-PDF'}</button>
+      {status && <span style={{ position: 'absolute', top: 42, right: 0, whiteSpace: 'nowrap', fontSize: 11, color: '#52606d', background: '#fff', padding: '5px 8px', border: '1px solid #dbe2e8', borderRadius: 7 }}>{status}</span>}
     </div>
   );
 }
