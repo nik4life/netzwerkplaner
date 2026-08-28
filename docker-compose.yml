@@ -1,0 +1,17 @@
+services:
+  netzwerkplaner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: netzwerkplaner
+    restart: unless-stopped
+    ports:
+      - "3080:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+    volumes:
+      - netzwerkplaner_data:/app/data
+
+volumes:
+  netzwerkplaner_data:
