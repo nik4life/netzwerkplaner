@@ -1,1 +1,1 @@
-{"name":"netzwerkplaner","version":"0.1.0","private":true,"scripts":{"dev":"next dev","build":"next build","start":"next start"},"dependencies":{"next":"15.5.2","pdfjs-dist":"5.4.54","react":"19.1.1","react-dom":"19.1.1"},"devDependencies":{}}
+{"name":"netzwerkplaner","version":"0.1.0","private":true,"scripts":{"dev":"next dev","build":"next build","start":"next start"},"dependencies":{"next":"15.5.2","pdf-lib":"1.17.1","pdfjs-dist":"5.4.54","react":"19.1.1","react-dom":"19.1.1"},"devDependencies":{}}
