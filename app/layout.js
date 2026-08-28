@@ -1,4 +1,5 @@
 import './globals.css';
+import './stats.css';
 import ExportButtons from './components/ExportButtons';
 
 export const metadata = {
