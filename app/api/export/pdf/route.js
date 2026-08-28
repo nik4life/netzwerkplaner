@@ -76,8 +76,7 @@ function drawPlanAnnotations(page, font, bold, floor) {
   }
 
   const markerSize = Math.max(5, Math.min(10, width / 140));
-  for (let index = 0; index < (floor.markers || []).length; index += 1) {
-    const marker = floor.markers[index];
+  for (const marker of floor.markers || []) {
     const info = TYPE_INFO[marker.type] || TYPE_INFO.sonder;
     const x = xFromPercent(width, marker.x);
     const y = yFromPercent(height, marker.y);
@@ -91,15 +90,22 @@ function drawPlanAnnotations(page, font, bold, floor) {
   drawLegend(page, font, bold, floor);
 }
 
-function drawTablePage(pdfDoc, font, bold, projectName, floor) {
-  const page = pdfDoc.addPage([841.89, 595.28]); // A4 landscape
+function drawTableHeader(page, font, bold, projectName, floor, pageNumber, totalPages) {
   const { width, height } = page.getSize();
   const margin = 34;
-  const markers = floor.markers || [];
-
   page.drawText(projectName || 'Netzwerkplaner', { x: margin, y: height - 42, size: 18, font: bold, color: rgb(0.05, 0.1, 0.15) });
-  page.drawText(`Auswertung ${floor.name || 'Etage'} - ${markers.length} Portpunkte - ${totalPorts(markers)} Ports`, { x: margin, y: height - 62, size: 10, font, color: rgb(0.3, 0.35, 0.4) });
+  page.drawText(`Auswertung ${floor.name || 'Etage'} - ${(floor.markers || []).length} Portpunkte - ${totalPorts(floor.markers || [])} Ports`, { x: margin, y: height - 62, size: 10, font, color: rgb(0.3, 0.35, 0.4) });
+  page.drawText(`Seite ${pageNumber}/${totalPages}`, { x: width - margin - 55, y: height - 42, size: 8, font, color: rgb(0.4, 0.45, 0.5) });
+}
 
+function drawTablePages(pdfDoc, font, bold, projectName, floor) {
+  const markers = floor.markers || [];
+  const pageSize = [841.89, 595.28]; // A4 landscape
+  const margin = 34;
+  const rowHeight = 17;
+  const firstRowY = pageSize[1] - 92;
+  const rowsPerPage = Math.max(1, Math.floor((firstRowY - 45) / rowHeight) - 1);
+  const totalPages = Math.max(1, Math.ceil(markers.length / rowsPerPage));
   const cols = [
     { label: '#', width: 34 },
     { label: 'Montageart', width: 135 },
@@ -109,40 +115,42 @@ function drawTablePage(pdfDoc, font, bold, projectName, floor) {
     { label: 'Position Y', width: 64 },
     { label: 'Notiz', width: 330 },
   ];
-  const rowHeight = 17;
-  let y = height - 92;
-  let x = margin;
 
-  page.drawRectangle({ x: margin, y: y - 3, width: width - margin * 2, height: rowHeight + 5, color: rgb(0.92, 0.94, 0.96) });
-  for (const col of cols) {
-    page.drawText(col.label, { x: x + 4, y: y + 3, size: 8, font: bold, color: rgb(0.08, 0.12, 0.16) });
-    x += col.width;
-  }
-  y -= rowHeight;
+  for (let pageIndex = 0; pageIndex < totalPages; pageIndex += 1) {
+    const page = pdfDoc.addPage(pageSize);
+    const { width } = page.getSize();
+    drawTableHeader(page, font, bold, projectName, floor, pageIndex + 1, totalPages);
 
-  for (let index = 0; index < markers.length; index += 1) {
-    if (y < 45) break;
-    const marker = markers[index];
-    const values = [
-      String(index + 1),
-      TYPE_INFO[marker.type]?.label || marker.type || '',
-      String(marker.ports || 0),
-      marker.channelId ? 'ja' : 'nein',
-      `${Number(marker.x || 0).toFixed(1)} %`,
-      `${Number(marker.y || 0).toFixed(1)} %`,
-      String(marker.note || '').replace(/[\r\n]+/g, ' ').slice(0, 90),
-    ];
-    x = margin;
-    page.drawLine({ start: { x: margin, y: y - 3 }, end: { x: width - margin, y: y - 3 }, thickness: 0.35, color: rgb(0.83, 0.86, 0.89) });
-    values.forEach((value, colIndex) => {
-      page.drawText(value, { x: x + 4, y: y + 2, size: 7.2, font, color: rgb(0.12, 0.16, 0.2) });
-      x += cols[colIndex].width;
-    });
+    let y = firstRowY;
+    let x = margin;
+    page.drawRectangle({ x: margin, y: y - 3, width: width - margin * 2, height: rowHeight + 5, color: rgb(0.92, 0.94, 0.96) });
+    for (const col of cols) {
+      page.drawText(col.label, { x: x + 4, y: y + 3, size: 8, font: bold, color: rgb(0.08, 0.12, 0.16) });
+      x += col.width;
+    }
     y -= rowHeight;
-  }
 
-  if (markers.length > Math.floor((height - 140) / rowHeight)) {
-    page.drawText(`Hinweis: Tabelle gekürzt (${markers.length} Portpunkte insgesamt).`, { x: margin, y: 22, size: 8, font, color: rgb(0.55, 0.2, 0.15) });
+    const start = pageIndex * rowsPerPage;
+    const end = Math.min(markers.length, start + rowsPerPage);
+    for (let index = start; index < end; index += 1) {
+      const marker = markers[index];
+      const values = [
+        String(index + 1),
+        TYPE_INFO[marker.type]?.label || marker.type || '',
+        String(marker.ports || 0),
+        marker.channelId ? 'ja' : 'nein',
+        `${Number(marker.x || 0).toFixed(1)} %`,
+        `${Number(marker.y || 0).toFixed(1)} %`,
+        String(marker.note || '').replace(/[\r\n]+/g, ' ').slice(0, 90),
+      ];
+      x = margin;
+      page.drawLine({ start: { x: margin, y: y - 3 }, end: { x: width - margin, y: y - 3 }, thickness: 0.35, color: rgb(0.83, 0.86, 0.89) });
+      values.forEach((value, colIndex) => {
+        page.drawText(value, { x: x + 4, y: y + 2, size: 7.2, font, color: rgb(0.12, 0.16, 0.2) });
+        x += cols[colIndex].width;
+      });
+      y -= rowHeight;
+    }
   }
 }
 
@@ -169,13 +177,12 @@ export async function POST(request) {
 
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const planPage = pdfDoc.getPage(0);
-    drawPlanAnnotations(planPage, font, bold, floor);
-    drawTablePage(pdfDoc, font, bold, body.projectName, floor);
+    drawPlanAnnotations(pdfDoc.getPage(0), font, bold, floor);
+    drawTablePages(pdfDoc, font, bold, body.projectName, floor);
 
     const output = await pdfDoc.save();
     const filename = `${safeFilename(body.projectName)}_${safeFilename(floor.name || 'Etage')}_Netzwerkplan.pdf`;
-    return new Response(output, {
+    return new Response(Buffer.from(output), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}"`,
