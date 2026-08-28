@@ -6,7 +6,7 @@ services:
     container_name: netzwerkplaner
     restart: unless-stopped
     ports:
-      - "3080:3000"
+      - "3210:3000"
     environment:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
