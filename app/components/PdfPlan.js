@@ -19,10 +19,7 @@ export default function PdfPlan({ url, zoom = 1, onAspect }) {
       try {
         setError('');
         const pdfjs = await import('pdfjs-dist/build/pdf.mjs');
-        pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-          'pdfjs-dist/build/pdf.worker.min.mjs',
-          import.meta.url,
-        ).toString();
+        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
         loadingTask = pdfjs.getDocument(url);
         pdf = await loadingTask.promise;
